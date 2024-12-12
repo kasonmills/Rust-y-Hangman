@@ -1,0 +1,76 @@
+// src/main.rs
+
+use std::collections::HashSet;
+use std::io::{self, Write};
+use rand::seq::SliceRandom;
+
+fn main() {
+    // List of words to choose from
+    let words = vec!["rust", "programming", "hangman", "developer", "keyboard"];
+    let secret_word = words.choose(&mut rand::thread_rng()).unwrap();
+    let mut guessed_word: Vec<char> = vec!['_'; secret_word.len()];
+    let mut attempts_left = 6;
+    let mut guessed_letters: HashSet<char> = HashSet::new();
+
+    println!("Welcome to Hangman!");
+    println!("Try to guess the word. You have {} attempts.", attempts_left);
+
+    // Game loop
+    while attempts_left > 0 {
+        // Display the current game state
+        println!("\nCurrent word: {}", guessed_word.iter().collect::<String>());
+        println!("Attempts left: {}", attempts_left);
+        print!("Guessed letters: ");
+        for letter in &guessed_letters {
+            print!("{} ", letter);
+        }
+        println!("\nEnter a letter: ");
+        io::stdout().flush().unwrap();
+
+        // Read user input
+        let mut input = String::new();
+        if io::stdin().read_line(&mut input).is_err() {
+            println!("Failed to read input. Try again.");
+            continue;
+        }
+        let input = input.trim().chars().next();
+
+        // Validate input
+        let guess = match input {
+            Some(c) if c.is_alphabetic() => c.to_ascii_lowercase(),
+            _ => {
+                println!("Invalid input. Please enter a single letter.");
+                continue;
+            }
+        };
+
+        // Check if the letter has already been guessed
+        if guessed_letters.contains(&guess) {
+            println!("You already guessed '{}'. Try a different letter.", guess);
+            continue;
+        }
+
+        guessed_letters.insert(guess);
+
+        // Check if the guessed letter is in the word
+        if secret_word.contains(guess) {
+            println!("Good guess!");
+            for (i, &c) in secret_word.chars().enumerate() {
+                if c == guess {
+                    guessed_word[i] = c;
+                }
+            }
+        } else {
+            println!("Wrong guess.");
+            attempts_left -= 1;
+        }
+
+        // Check if the player has won
+        if guessed_word.iter().collect::<String>() == *secret_word {
+            println!("\nCongratulations! You guessed the word: {}", secret_word);
+            return;
+        }
+    }
+
+    println!("\nGame Over! The word was: {}", secret_word);
+}
